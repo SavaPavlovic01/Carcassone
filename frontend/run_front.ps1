@@ -1,0 +1,1 @@
+docker run -it --rm -d -p 8081:80 --name web -v C:\Users\JA\Desktop\projekti\carcassonne\frontend\dist:/usr/share/nginx/html nginx
