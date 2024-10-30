@@ -5,6 +5,8 @@ type EventType int
 const (
 	joinRoom EventType = iota
 	createRoom
+	gameStarted
+	tileAdded
 	invalid
 )
 

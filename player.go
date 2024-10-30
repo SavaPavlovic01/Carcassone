@@ -14,14 +14,16 @@ type Player struct {
 	inRoom bool
 
 	makeRoomReq chan<- RoomRequest
+	gameReq     chan<- GameRequest
 }
 
-func newPlayer(conn *websocket.Conn, id string, makeRoomReq chan RoomRequest) *Player {
+func newPlayer(conn *websocket.Conn, id string, makeRoomReq chan RoomRequest, gameReq chan GameRequest) *Player {
 	return &Player{
 		conn:        conn,
 		id:          id,
 		inRoom:      false,
 		makeRoomReq: makeRoomReq,
+		gameReq:     gameReq,
 	}
 }
 
@@ -32,6 +34,13 @@ func (p *Player) sendString(msg string) {
 	w, _ := p.conn.NextWriter(websocket.TextMessage)
 	defer w.Close()
 	json.NewEncoder(w).Encode(resp)
+}
+
+func (p *Player) sendStruct(msg interface{}) {
+
+	w, _ := p.conn.NextWriter(websocket.TextMessage)
+	defer w.Close()
+	json.NewEncoder(w).Encode(msg)
 }
 
 func (p *Player) receiveMsg() (map[string]interface{}, error) {
@@ -79,6 +88,22 @@ func (p *Player) start() {
 				continue
 			}
 			p.makeRoomReq <- RoomRequest{player: p, reqType: playerJoinRoom, room: data["roomId"].(string)}
+		}
+
+		if getEventType(data) == gameStarted {
+			p.gameReq <- GameRequest{player: p, reqType: startGame, roomId: data["roomId"].(string)}
+		}
+
+		if getEventType(data) == tileAdded {
+			sides := [4]tile_side{} // TODO: TERRIBLE HACK PLS FIX
+			for i, x := range data["sides"].([]interface{}) {
+				sides[i] = tile_side(x.(float64))
+			}
+			addedTile := make_tile_from_array(sides, false, false, false)
+			p.gameReq <- GameRequest{player: p,
+				reqType: playTile,
+				roomId:  data["roomId"].(string),
+				_tile:   TileInfo{_tile: &addedTile, x: int(data["x"].(float64)), y: int(data["y"].(float64))}}
 		}
 
 	}

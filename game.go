@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"math/rand"
 )
 
@@ -111,6 +112,7 @@ func (g game) place_tile(placed_tile tile, x_offset int, y_offset int) error {
 
 // TODO: REFACTOR
 func (g game) check_neighbors(t tile, x_offset int, y_offset int) bool {
+	//fmt.Println(x_offset, y_offset)
 	at_least_one_neighbor := false
 	top_tile, exists := g.Board[int_tuple{x_offset, y_offset - 1}]
 	if exists {
@@ -122,8 +124,10 @@ func (g game) check_neighbors(t tile, x_offset int, y_offset int) bool {
 
 	left_tile, exists := g.Board[int_tuple{x_offset - 1, y_offset}]
 	if exists {
+		fmt.Println("HERE")
 		at_least_one_neighbor = true
 		if !sides_match(left_tile.Sides[right], t.Sides[left]) {
+			fmt.Println("HMMMM")
 			return false
 		}
 	}

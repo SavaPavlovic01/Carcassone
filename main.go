@@ -6,10 +6,9 @@ import (
 )
 
 func main() {
-	rm := RoomManager{}
-	rm.rooms = map[string]Room{}
-	rm.makeRoomReq = make(chan RoomRequest)
-	go rm.start()
-	http.HandleFunc("/", rm.serveWS)
+	server := newServer()
+	go server.rm.start()
+	go server.gm.start()
+	http.HandleFunc("/", server.serveWS)
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }

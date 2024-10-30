@@ -3,10 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
-	"log"
-	"net/http"
-
-	"github.com/gorilla/websocket"
+	"strconv"
 )
 
 type RoomRequestType int
@@ -23,7 +20,7 @@ type RoomRequest struct {
 }
 
 type RoomManager struct {
-	rooms       map[string]Room
+	rooms       map[string]*Room
 	makeRoomReq chan RoomRequest
 }
 
@@ -34,6 +31,14 @@ func (rm RoomManager) addRoom(owner *Player) error {
 
 	rm.rooms[owner.id] = newRoom(owner)
 	return nil
+}
+
+func (rm RoomManager) getRoom(roomId string) (*Room, error) {
+	room, exists := rm.rooms[roomId]
+	if !exists {
+		return nil, errors.New("room doesnt exist")
+	}
+	return room, nil
 }
 
 func (rm RoomManager) joinRoom(player *Player, roomId string) error {
@@ -50,11 +55,6 @@ func (rm RoomManager) joinRoom(player *Player, roomId string) error {
 	return nil
 }
 
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-}
-
 // TODO: refactor
 func (rm RoomManager) start() {
 	for {
@@ -66,7 +66,7 @@ func (rm RoomManager) start() {
 				if err != nil {
 					req.player.sendString("room already exists")
 				} else {
-					req.player.sendString("OK")
+					req.player.sendString("1")
 					req.player.inRoom = true
 				}
 			}
@@ -78,21 +78,9 @@ func (rm RoomManager) start() {
 				req.player.inRoom = true
 				req.player.sendString("OK")
 				fmt.Printf("%+v\n", rm.rooms)
+				rm.rooms[req.room].pingRoom(strconv.Itoa(len(rm.rooms[req.room].players)))
 			}
 
 		}
 	}
-}
-
-func (rm RoomManager) serveWS(w http.ResponseWriter, r *http.Request) {
-	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
-	conn, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	player := newPlayer(conn, "", rm.makeRoomReq)
-
-	player.start()
 }

@@ -9,7 +9,7 @@ type Room struct {
 	players     map[string]*Player
 }
 
-func (r Room) addPlayer(player *Player) error {
+func (r *Room) addPlayer(player *Player) error {
 	_, inGame := r.players[player.id]
 	if inGame {
 		return errors.New("already in game")
@@ -19,8 +19,20 @@ func (r Room) addPlayer(player *Player) error {
 	return nil
 }
 
-func newRoom(owner *Player) Room {
-	return Room{
+func (r *Room) pingRoom(msg string) {
+	for _, player := range r.players {
+		player.sendString(msg)
+	}
+}
+
+func (r *Room) pingRoomStruct(msg interface{}) {
+	for _, player := range r.players {
+		player.sendStruct(msg)
+	}
+}
+
+func newRoom(owner *Player) *Room {
+	return &Room{
 		_game:       new_game(),
 		roomOwner:   owner.id,
 		gameStarted: false,
