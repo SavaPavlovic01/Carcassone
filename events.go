@@ -7,6 +7,7 @@ const (
 	createRoom
 	gameStarted
 	tileAdded
+	meepleAdded
 	invalid
 )
 
