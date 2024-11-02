@@ -106,5 +106,30 @@ func (p *Player) start() {
 				_tile:   TileInfo{_tile: &addedTile, x: int(data["x"].(float64)), y: int(data["y"].(float64))}}
 		}
 
+		if getEventType(data) == meepleAdded {
+			//fmt.Println(data["color"])
+			newMeeple := Meeple{
+				x:        int(data["x"].(float64)),
+				y:        int(data["y"].(float64)),
+				color:    fmt.Sprint(data["color"]),
+				isPriest: data["isPriest"].(bool),
+			}
+			p.gameReq <- GameRequest{player: p, reqType: placeMeeple, roomId: data["roomId"].(string), meeple: newMeeple}
+		}
+
+		if getEventType(data) == meepleRemoved {
+			p.gameReq <- GameRequest{player: p, reqType: removeMeeple,
+				roomId: data["roomId"].(string), meeple: Meeple{x: int(data["index"].(float64))}}
+		}
+
+		if getEventType(data) == meepleMoved {
+			meeple := Meeple{
+				x: int(data["x"].(float64)),
+				y: int(data["y"].(float64)),
+			}
+			p.gameReq <- GameRequest{player: p, reqType: moveMeeple, roomId: data["roomId"].(string),
+				index: int(data["index"].(float64)), meeple: meeple}
+		}
+
 	}
 }

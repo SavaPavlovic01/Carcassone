@@ -31,6 +31,15 @@ func (r *Room) pingRoomStruct(msg interface{}) {
 	}
 }
 
+func (r *Room) playerPingRoom(msg interface{}, playerId string) {
+	for _, player := range r.players {
+		if player.id == playerId {
+			continue
+		}
+		player.sendStruct(msg)
+	}
+}
+
 func newRoom(owner *Player) *Room {
 	return &Room{
 		_game:       new_game(),

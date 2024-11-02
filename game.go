@@ -26,9 +26,16 @@ var rggr [4]tile_side = [4]tile_side{road, grass, grass, road}
 var rgrr [4]tile_side = [4]tile_side{road, grass, road, road}
 var rrrr [4]tile_side = [4]tile_side{road, road, road, road}
 
+type Meeple struct {
+	x        int
+	y        int
+	color    string
+	isPriest bool
+}
 type game struct {
-	Deck  []tile
-	Board map[int_tuple]tile
+	Deck    []tile
+	Board   map[int_tuple]tile
+	Meeples []Meeple
 }
 
 // TODO: REFACTOR
@@ -244,16 +251,15 @@ func (g game) recurse(visited_map map[int_tuple]int, x_pos int, y_pos int) (bool
 	return is_closed, total_score
 }
 
-func (g game) place_meeple(x_pos int, y_pos int) error {
-	tile, ok := g.Board[int_tuple{x_pos, y_pos}]
-	if !ok {
-		return errors.New("no tile")
-	}
+func (g *game) addMeeple(x int, y int, color string, isPriest bool) {
+	g.Meeples = append(g.Meeples, Meeple{x: x, y: y, color: color, isPriest: isPriest})
+}
 
-	if tile.Meeple {
-		return errors.New("tile has meeple")
-	}
+func (g *game) removeMeeple(pos int) {
+	g.Meeples = append(g.Meeples[:pos], g.Meeples[pos+1:]...)
+}
 
-	// check if city occupied
-	return nil
+func (g *game) moveMeeple(index int, x int, y int) {
+	g.Meeples[index].x = x
+	g.Meeples[index].y = y
 }

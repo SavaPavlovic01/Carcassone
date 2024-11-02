@@ -24,7 +24,7 @@ type tile struct {
 	Crest     bool
 	Ends_road bool
 	Cathedral bool
-	Meeple    bool
+
 	Sides     [4]tile_side
 	Neighbors [6]*tile
 }

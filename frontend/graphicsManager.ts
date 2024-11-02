@@ -61,6 +61,23 @@ export class GraphicsManger implements Listener{
             if(!this.gameState) return
             this.redraw()
         }
+
+        if(eventType == MessageTypes.sendMeeple){
+            let curMeeple = new Meeple(msg["x"], msg["y"])
+            this.meeples.push(curMeeple)
+            this.redraw()
+        }
+
+        if(eventType == MessageTypes.removeMeeple){
+            this.removeMeeple(msg["index"])
+            this.redraw()
+        }
+
+        if(eventType == MessageTypes.movedMeeple){
+            this.meeples[msg["index"]].x = msg["x"]
+            this.meeples[msg["index"]].y = msg["y"]
+            this.redraw()
+        }
     }
 
     public addMeeple(meeple:Meeple){
@@ -68,6 +85,7 @@ export class GraphicsManger implements Listener{
     }
 
     public removeMeeple(index:number){
+        if(index == -1) return
         this.meeples.splice(index, 1)
     }
 

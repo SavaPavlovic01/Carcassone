@@ -107,7 +107,7 @@ export class GameManager implements Listener{
     }
 
     private getNeighbor(x:number, y:number, pos:Orientation){
-        let offsets = [[1, 0], [0, -1], [-1, 0], [0, 1]]
+        let offsets = [[1, 0], [0, 1], [-1, 0], [0, -1]]
         console.log(pos)
         return this.tiles.get(GameManager.indexToStr([x + offsets[pos][0], y + offsets[pos][1]]))
     }

@@ -8,6 +8,8 @@ const (
 	gameStarted
 	tileAdded
 	meepleAdded
+	meepleRemoved
+	meepleMoved
 	invalid
 )
 

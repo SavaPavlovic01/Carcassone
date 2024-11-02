@@ -2,7 +2,10 @@ export enum MessageTypes{
     joinRoom,
     makeRoom,
     startGame,
-    sendTile
+    sendTile,
+    sendMeeple,
+    removeMeeple,
+    movedMeeple
 }
 
 export interface Listener{

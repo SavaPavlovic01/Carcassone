@@ -7,6 +7,9 @@ type GameRequestType int
 const (
 	startGame GameRequestType = iota
 	playTile
+	placeMeeple
+	removeMeeple
+	moveMeeple
 )
 
 type TileInfo struct {
@@ -20,6 +23,8 @@ type GameRequest struct {
 	roomId  string
 	player  *Player
 	_tile   TileInfo
+	meeple  Meeple
+	index   int
 }
 
 type GameManager struct {
@@ -91,6 +96,67 @@ func (gm GameManager) start() {
 					Cathedral: false,
 				}
 				room.pingRoomStruct(resp)
+			}
+
+			if req.reqType == placeMeeple {
+				room, err := gm.roomManager.getRoom(req.roomId)
+				if err != nil {
+					req.player.sendString("room doesnt exist")
+					continue
+				}
+				if !room.gameStarted {
+					req.player.sendString("game not started")
+					continue
+				}
+				fmt.Printf("%+v", req.meeple)
+				room._game.addMeeple(req.meeple.x, req.meeple.y, req.meeple.color, req.meeple.isPriest)
+				resp := struct {
+					MsgType  int    `json:"msgType"`
+					X        int    `json:"x"`
+					Y        int    `json:"y"`
+					Color    string `json:"color"`
+					IsPriest bool   `json:"isPriest"`
+				}{X: req.meeple.x, Y: req.meeple.y, Color: req.meeple.color,
+					IsPriest: req.meeple.isPriest, MsgType: int(meepleAdded)}
+				room.playerPingRoom(resp, req.player.id)
+			}
+
+			if req.reqType == removeMeeple {
+				room, err := gm.roomManager.getRoom(req.roomId)
+				if err != nil {
+					req.player.sendString("room doesnt exist")
+					continue
+				}
+				if !room.gameStarted {
+					req.player.sendString("game not started")
+					continue
+				}
+				room._game.removeMeeple(req.meeple.x)
+				resp := struct {
+					MsgType int `json:"msgType"`
+					Index   int `json:"index"`
+				}{MsgType: int(meepleRemoved), Index: req.meeple.x}
+				room.playerPingRoom(resp, req.player.id)
+			}
+
+			if req.reqType == moveMeeple {
+				room, err := gm.roomManager.getRoom(req.roomId)
+				if err != nil {
+					req.player.sendString("room doesnt exist")
+					continue
+				}
+				if !room.gameStarted {
+					req.player.sendString("game not started")
+					continue
+				}
+				room._game.moveMeeple(req.index, req.meeple.x, req.meeple.y)
+				resp := struct {
+					MsgType int `json:"msgType"`
+					Index   int `json:"index"`
+					X       int `json:"x"`
+					Y       int `json:"y"`
+				}{MsgType: int(meepleMoved), Index: req.index, X: req.meeple.x, Y: req.meeple.y}
+				room.playerPingRoom(resp, req.player.id)
 			}
 
 		}

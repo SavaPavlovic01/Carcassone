@@ -12,6 +12,7 @@ export class Game{
     driver:WS_driver
     canvasElem:HTMLCanvasElement
     activeMeeple:[Meeple|null, number]
+    activeMeeplePlaced:boolean = true
 
     constructor(){
         this.driver = new WS_driver();
@@ -32,6 +33,9 @@ export class Game{
 
         this.driver.attach(MessageTypes.sendTile, this.gameManager)
         this.driver.attach(MessageTypes.sendTile, this.graphicsMangaer)
+        this.driver.attach(MessageTypes.sendMeeple, this.graphicsMangaer)
+        this.driver.attach(MessageTypes.removeMeeple, this.graphicsMangaer)
+        this.driver.attach(MessageTypes.movedMeeple, this.graphicsMangaer)
 
         this.addCanvasListeners()
 
@@ -68,12 +72,14 @@ export class Game{
             let meep = this.graphicsMangaer.clickedMeeple(ev.clientX, ev.clientY)
             if(meep[0] != null){
                 this.activeMeeple = meep
+                this.activeMeeplePlaced = true
                 return
             }
             if(ev.clientX >= this.graphicsMangaer.meepleUiX && ev.clientY >= this.graphicsMangaer.meepleUiY){
                 this.activeMeeple[0] = new Meeple(ev.clientX, ev.clientY)
-                this.activeMeeple[1] = this.graphicsMangaer.meeples.length - 1
+                this.activeMeeple[1] = this.graphicsMangaer.meeples.length 
                 this.graphicsMangaer.addMeeple(this.activeMeeple[0])
+                this.activeMeeplePlaced = false
                 this.graphicsMangaer.redraw()
                 return
             }
@@ -89,6 +95,44 @@ export class Game{
             if(!tile){
                 this.graphicsMangaer.removeMeeple(this.activeMeeple[1])
                 this.graphicsMangaer.redraw()
+                
+                if(this.activeMeeplePlaced){
+                    // poruka za premestanje
+                    const msg = {
+                        msgType:MessageTypes.removeMeeple,
+                        roomId:this.gameManager.roomId,
+                        playerId:this.gameManager.playerId,
+                        index:this.activeMeeple[1]
+                    }
+                    console.log("Sklonjen sa table vec postojeci")
+                    this.driver.send_msg(JSON.stringify(msg))
+                } 
+            }else{
+                
+                if(this.activeMeeplePlaced){
+                    // vec postojeci premesten
+                    const msg = {
+                        msgType:MessageTypes.movedMeeple,
+                        roomId:this.gameManager.roomId,
+                        playerId:this.gameManager.playerId,
+                        index:this.activeMeeple[1],
+                        x:this.activeMeeple[0].x,
+                        y:this.activeMeeple[0].y
+                    }
+                    this.driver.send_msg(JSON.stringify(msg))
+                } else {
+                    // dodat nov
+                    const msg = {
+                        msgType: MessageTypes.sendMeeple,
+                        roomId:this.gameManager.roomId,
+                        playerId:this.gameManager.playerId,
+                        x:this.activeMeeple[0].x,
+                        y:this.activeMeeple[0].y,
+                        color:"red",
+                        isPriest:false
+                    }
+                    this.driver.send_msg(JSON.stringify(msg))
+                }                
             }
             this.activeMeeple = [null, -1]
         })

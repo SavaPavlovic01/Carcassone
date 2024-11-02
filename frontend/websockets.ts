@@ -17,6 +17,7 @@ export class WS_driver{
             this.subscribers.get(data["msgType"])?.forEach((listener:Listener) =>{
                 listener.notify(data["msgType"], data);
             })
+            alert(JSON.stringify(data))
             console.log(data)
         }
         this.subscribers = new Map<number, Listener[]>()
