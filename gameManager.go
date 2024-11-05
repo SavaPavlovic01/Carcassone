@@ -10,6 +10,7 @@ const (
 	placeMeeple
 	removeMeeple
 	moveMeeple
+	tempTile
 )
 
 type TileInfo struct {
@@ -19,12 +20,13 @@ type TileInfo struct {
 }
 
 type GameRequest struct {
-	reqType GameRequestType
-	roomId  string
-	player  *Player
-	_tile   TileInfo
-	meeple  Meeple
-	index   int
+	reqType       GameRequestType
+	roomId        string
+	player        *Player
+	_tile         TileInfo
+	validPosition bool
+	meeple        Meeple
+	index         int
 }
 
 type GameManager struct {
@@ -57,7 +59,27 @@ func (gm GameManager) start() {
 					req.player.sendString("you are not the owner")
 				}
 				room.gameStarted = true
-				room.pingRoom("game started")
+				type response struct {
+					MsgType   int          `json:"msgType"`
+					MyTurn    bool         `json:"myTurn"`
+					TileSides [4]tile_side `json:"tileSides"`
+					Crest     bool         `json:"crest"`
+					EndsRoad  bool         `json:"endsRoad"`
+					Cathedral bool         `json:"cathedral"`
+				}
+				drawnTile := room._game.draw_card()
+				resp := response{
+					MsgType:   int(gameStarted),
+					MyTurn:    false,
+					TileSides: drawnTile.Sides,
+					Crest:     drawnTile.Crest,
+					EndsRoad:  drawnTile.Ends_road,
+					Cathedral: drawnTile.Cathedral,
+				}
+				room.playerPingRoom(resp, room.playerIds[room.curTurn])
+				resp.MyTurn = true
+				room.players[room.playerIds[room.curTurn]].sendStruct(resp)
+				//room.nextTurn()
 			}
 
 			if req.reqType == playTile {
@@ -68,6 +90,11 @@ func (gm GameManager) start() {
 				}
 				if !room.gameStarted {
 					req.player.sendString("game not started")
+					continue
+				}
+
+				if room.playerIds[room.curTurn] != req.player.id {
+					req.player.sendString("Not your turn")
 					continue
 				}
 
@@ -96,6 +123,68 @@ func (gm GameManager) start() {
 					Cathedral: false,
 				}
 				room.pingRoomStruct(resp)
+
+				// saljemo svima koja je izvucena sledece posto je gotov potez
+				type response struct {
+					MsgType   int          `json:"msgType"`
+					MyTurn    bool         `json:"myTurn"`
+					TileSides [4]tile_side `json:"tileSides"`
+					Crest     bool         `json:"crest"`
+					EndsRoad  bool         `json:"endsRoad"`
+					Cathedral bool         `json:"cathedral"`
+				}
+				drawnTile := room._game.draw_card()
+				secondResp := response{
+					MsgType:   int(gameStarted),
+					MyTurn:    false,
+					TileSides: drawnTile.Sides,
+					Crest:     drawnTile.Crest,
+					EndsRoad:  drawnTile.Ends_road,
+					Cathedral: drawnTile.Cathedral,
+				}
+				room.nextTurn()
+				room.playerPingRoom(secondResp, room.playerIds[room.curTurn])
+				secondResp.MyTurn = true
+				room.players[room.playerIds[room.curTurn]].sendStruct(secondResp)
+
+			}
+
+			if req.reqType == tempTile {
+				room, err := gm.roomManager.getRoom(req.roomId)
+				if err != nil {
+					req.player.sendString("room doesnt exist")
+					continue
+				}
+				if !room.gameStarted {
+					req.player.sendString("game not started")
+					continue
+				}
+
+				if room.playerIds[room.curTurn] != req.player.id {
+					req.player.sendString("Not your turn")
+					continue
+				}
+
+				resp := struct {
+					MsgType   int          `json:"msgType"`
+					TileX     int          `json:"tileX"`
+					TileY     int          `json:"tileY"`
+					TileSides [4]tile_side `json:"tileSides"`
+					Crest     bool         `json:"crest"`
+					EndsRoad  bool         `json:"endsRoad"`
+					Cathedral bool         `json:"cathedral"`
+					IsValid   bool         `json:"isValid"`
+				}{
+					MsgType:   int(tempTilePlaced),
+					TileX:     req._tile.x,
+					TileY:     req._tile.y,
+					TileSides: req._tile._tile.Sides,
+					Crest:     false,
+					EndsRoad:  false,
+					Cathedral: false,
+					IsValid:   req.validPosition,
+				}
+				room.pingRoomStruct(resp)
 			}
 
 			if req.reqType == placeMeeple {
@@ -108,7 +197,12 @@ func (gm GameManager) start() {
 					req.player.sendString("game not started")
 					continue
 				}
-				fmt.Printf("%+v", req.meeple)
+
+				if room.playerIds[room.curTurn] != req.player.id {
+					req.player.sendString("Not your turn")
+					continue
+				}
+
 				room._game.addMeeple(req.meeple.x, req.meeple.y, req.meeple.color, req.meeple.isPriest)
 				resp := struct {
 					MsgType  int    `json:"msgType"`
@@ -131,6 +225,12 @@ func (gm GameManager) start() {
 					req.player.sendString("game not started")
 					continue
 				}
+
+				if room.playerIds[room.curTurn] != req.player.id {
+					req.player.sendString("Not your turn")
+					continue
+				}
+
 				room._game.removeMeeple(req.meeple.x)
 				resp := struct {
 					MsgType int `json:"msgType"`
@@ -147,6 +247,11 @@ func (gm GameManager) start() {
 				}
 				if !room.gameStarted {
 					req.player.sendString("game not started")
+					continue
+				}
+
+				if room.playerIds[room.curTurn] != req.player.id {
+					req.player.sendString("Not your turn")
 					continue
 				}
 				room._game.moveMeeple(req.index, req.meeple.x, req.meeple.y)

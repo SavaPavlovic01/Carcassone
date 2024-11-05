@@ -7,6 +7,8 @@ type Room struct {
 	roomOwner   string
 	gameStarted bool
 	players     map[string]*Player
+	playerIds   []string
+	curTurn     int
 }
 
 func (r *Room) addPlayer(player *Player) error {
@@ -16,6 +18,7 @@ func (r *Room) addPlayer(player *Player) error {
 	}
 
 	r.players[player.id] = player
+	r.playerIds = append(r.playerIds, player.id)
 	return nil
 }
 
@@ -40,11 +43,20 @@ func (r *Room) playerPingRoom(msg interface{}, playerId string) {
 	}
 }
 
+func (r *Room) nextTurn() int {
+	r.curTurn++
+	if r.curTurn == len(r.players) {
+		r.curTurn = 0
+	}
+	return r.curTurn
+}
+
 func newRoom(owner *Player) *Room {
 	return &Room{
 		_game:       new_game(),
 		roomOwner:   owner.id,
 		gameStarted: false,
 		players:     map[string]*Player{owner.id: owner},
+		playerIds:   []string{owner.id},
 	}
 }

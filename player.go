@@ -106,6 +106,20 @@ func (p *Player) start() {
 				_tile:   TileInfo{_tile: &addedTile, x: int(data["x"].(float64)), y: int(data["y"].(float64))}}
 		}
 
+		if getEventType(data) == tempTilePlaced {
+			sides := [4]tile_side{} // TODO: TERRIBLE HACK PLS FIX
+			for i, x := range data["sides"].([]interface{}) {
+				sides[i] = tile_side(x.(float64))
+			}
+			addedTile := make_tile_from_array(sides, false, false, false)
+			p.gameReq <- GameRequest{player: p,
+				reqType:       tempTile,
+				roomId:        data["roomId"].(string),
+				_tile:         TileInfo{_tile: &addedTile, x: int(data["x"].(float64)), y: int(data["y"].(float64))},
+				validPosition: data["isValid"].(bool),
+			}
+		}
+
 		if getEventType(data) == meepleAdded {
 			//fmt.Println(data["color"])
 			newMeeple := Meeple{

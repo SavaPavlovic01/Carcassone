@@ -14,6 +14,8 @@ export class Game{
     activeMeeple:[Meeple|null, number]
     activeMeeplePlaced:boolean = true
 
+    
+
     constructor(){
         this.driver = new WS_driver();
         this.canvasElem = document.getElementById('canvas') as HTMLCanvasElement
@@ -36,6 +38,9 @@ export class Game{
         this.driver.attach(MessageTypes.sendMeeple, this.graphicsMangaer)
         this.driver.attach(MessageTypes.removeMeeple, this.graphicsMangaer)
         this.driver.attach(MessageTypes.movedMeeple, this.graphicsMangaer)
+        this.driver.attach(MessageTypes.tempTilePlaced, this.graphicsMangaer)
+        this.driver.attach(MessageTypes.startGame, this.gameManager)
+        this.driver.attach(MessageTypes.startGame, this.graphicsMangaer)
 
         this.addCanvasListeners()
 
@@ -58,6 +63,41 @@ export class Game{
             console.log("CLICKED START")
             this.gameManager.startGame()
         }
+
+        let endTurn = document.getElementById("endTurn") as HTMLButtonElement
+        endTurn.onclick = (ev) =>{
+            if(!this.graphicsMangaer.tempTileValidPostion || !this.graphicsMangaer.tempTile){
+                console.log("NE MOZ")
+                return
+            }
+            if(!this.gameManager.myTurn) return;
+            let index = [this.graphicsMangaer.tempTile.x, this.graphicsMangaer.tempTile.y]
+            let id = GameManager.indexToStr(index)
+            this.graphicsMangaer.tempTile.overlayColor = ""
+            this.gameManager.tiles.set(id, this.graphicsMangaer.tempTile)
+            console.log(this.gameManager.tiles)
+            const msg = {
+                msgType:MessageTypes.sendTile,
+                roomId:this.gameManager.roomId,
+                playerId:this.gameManager.playerId,
+                sides:[TileSide.road, TileSide.city, TileSide.grass, TileSide.city],
+                x:index[0],
+                y:index[1]
+            }
+
+            this.driver.send_msg(JSON.stringify(msg))
+        }
+
+        let rotate = document.getElementById("rotate") as HTMLButtonElement
+        rotate.onclick = (ev) =>{
+            this.graphicsMangaer.drawnTile?.rotate()
+            if(this.graphicsMangaer.tempTile && this.graphicsMangaer.drawnTile){
+                this.graphicsMangaer.tempTile.sides = this.graphicsMangaer.drawnTile.sides
+                let coords = this.graphicsMangaer.tempTile.indexToCoord()
+                this.graphicsMangaer.tempTileValidPostion = this.gameManager.checkIfTileValid(coords[0], coords[1], this.graphicsMangaer.drawnTile.sides)
+            }
+            this.graphicsMangaer.redraw()
+        }
     }
 
     private addCanvasListeners(){
@@ -69,6 +109,7 @@ export class Game{
         })
         
         this.canvasElem.addEventListener("mousedown", (ev:MouseEvent)=>{
+            if(!this.gameManager.myTurn) return;
             let meep = this.graphicsMangaer.clickedMeeple(ev.clientX, ev.clientY)
             if(meep[0] != null){
                 this.activeMeeple = meep
@@ -85,11 +126,26 @@ export class Game{
             }
             let x = Math.floor(ev.clientX / Tile.width) * Tile.width
             let y = Math.floor(ev.clientY / Tile.height) * Tile.height
-            this.gameManager.addTile(x, y, [TileSide.road, TileSide.city, TileSide.grass, TileSide.city])
+            //this.gameManager.addTile(x, y, [TileSide.road, TileSide.city, TileSide.grass, TileSide.city])
+            if(!this.graphicsMangaer.drawnTile) return
+            this.graphicsMangaer.tempTileValidPostion = this.gameManager.checkIfTileValid(x, y, this.graphicsMangaer.drawnTile.sides)
+            let index = Tile.coordToIndex(x, y)
+            this.graphicsMangaer.tempTile = new Tile(index[0], index[1], this.graphicsMangaer.drawnTile.sides)
+            const msg = {
+                msgType: MessageTypes.tempTilePlaced,
+                roomId:this.gameManager.roomId,
+                playerId:this.gameManager.playerId,
+                sides:this.graphicsMangaer.drawnTile.sides,
+                x:index[0],
+                y:index[1],
+                isValid:this.graphicsMangaer.tempTileValidPostion
+            }
+            this.driver.send_msg(JSON.stringify(msg))
             this.graphicsMangaer.redraw()
         })
 
         this.canvasElem.addEventListener("mouseup", (ev:MouseEvent) =>{
+            if(!this.gameManager.myTurn) return;
             if(!this.activeMeeple[0]) return
             let tile = this.graphicsMangaer.checkIfMeepleValidPosition(this.activeMeeple[0])
             if(!tile){
@@ -139,6 +195,7 @@ export class Game{
 
         this.canvasElem.addEventListener("mousemove", (ev:MouseEvent) =>{
             if(!this.activeMeeple[0]) return
+            if(!this.gameManager.myTurn) return
             this.activeMeeple[0].x = ev.clientX
             this.activeMeeple[0].y = ev.clientY
             this.graphicsMangaer.redraw()

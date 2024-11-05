@@ -5,7 +5,9 @@ export enum MessageTypes{
     sendTile,
     sendMeeple,
     removeMeeple,
-    movedMeeple
+    movedMeeple,
+    tempTilePlaced,
+    pullTile
 }
 
 export interface Listener{

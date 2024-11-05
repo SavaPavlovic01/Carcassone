@@ -10,6 +10,7 @@ const (
 	meepleAdded
 	meepleRemoved
 	meepleMoved
+	tempTilePlaced
 	invalid
 )
 

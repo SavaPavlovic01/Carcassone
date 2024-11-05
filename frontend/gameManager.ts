@@ -9,6 +9,7 @@ export class GameManager implements Listener{
     playerId:string
     tiles:Map<string, Tile>
     meepleLeft:number = 5
+    myTurn:boolean = false
 
     constructor(_roomId:string|null, _wsDriver:WS_driver){
         this.roomId = _roomId
@@ -23,6 +24,11 @@ export class GameManager implements Listener{
             let x = msg["tileX"]
             let y = msg["tileY"]
             this.tiles.set(GameManager.indexToStr([x, y]), new Tile(x,y, msg["tileSides"]))
+            this.myTurn = msg["myTurn"]
+        }
+
+        if(eventType == MessageTypes.startGame){
+            this.myTurn = msg["myTurn"]
         }
     }
 
@@ -73,7 +79,7 @@ export class GameManager implements Listener{
         return true
     }
 
-    private static indexToStr(index:number[]){
+    public static indexToStr(index:number[]){
         return `${index[0]}|${index[1]}`
     }
 
@@ -83,31 +89,42 @@ export class GameManager implements Listener{
 
         if(this.tiles.get(GameManager.indexToStr(index)) != undefined){
             console.log("OCCUPIED")
-            return
+            return false
         }
         
 
         let orientations = [Orientation.left, Orientation.top, Orientation.right, Orientation.bottom]
 
-        
+        console.log("INDEX:", index)
         for(let curSide of orientations){
             let curTile = this.getNeighbor(index[0], index[1], curSide)
-            console.log(curTile)
+            //console.log(curTile)
             if(curTile != undefined){
                 hasNeighbor = true
-                if(!this.sameSideType(curTile.sides[this.getOppositeSide(curSide)], sides[curSide])) return
+                if(!this.sameSideType(curTile.sides[this.getOppositeSide(curSide)], sides[curSide])) return false
             }
         }
 
         if(hasNeighbor){
-            let addedTile = new Tile(-index[0], index[1], sides)
+            let addedTile = new Tile(index[0], index[1], sides)
             this.tiles.set(GameManager.indexToStr([index[0], index[1]]), addedTile)
-            this.sendTile(addedTile)
+            //this.sendTile(addedTile)
+            return true
         }
+        return false
+    }
+
+    public checkIfTileValid(x:number, y:number, sides:TileSide[]) : boolean{
+        if(this.addTile(x, y, sides)){
+            let index = Tile.coordToIndex(x, y)
+            this.tiles.delete(GameManager.indexToStr([index[0], index[1]]))
+            return true
+        } 
+        return false
     }
 
     private getNeighbor(x:number, y:number, pos:Orientation){
-        let offsets = [[1, 0], [0, 1], [-1, 0], [0, -1]]
+        let offsets = [[-1, 0], [0, 1], [1, 0], [0, -1]]
         console.log(pos)
         return this.tiles.get(GameManager.indexToStr([x + offsets[pos][0], y + offsets[pos][1]]))
     }

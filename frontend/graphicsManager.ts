@@ -14,6 +14,11 @@ export class GraphicsManger implements Listener{
 
     meeples:Meeple[] = []
 
+    tempTile:Tile | null = null
+    tempTileValidPostion:boolean = false
+
+    drawnTile:Tile | null = null
+
     constructor(ctx:CanvasRenderingContext2D | null, gameState:Map<string, Tile>){
         this.ctx = ctx
         this.gameState = gameState
@@ -36,6 +41,16 @@ export class GraphicsManger implements Listener{
         for(let [_, tile] of this.gameState){
             tile.draw(this.ctx)
         }
+        
+        if(this.tempTile) {
+            // check if tempTile in valid position
+            if(this.tempTileValidPostion){
+                this.tempTile.overlayColor = "rgb(0,255,0,0.5)"
+            } else{
+                this.tempTile.overlayColor = "rgb(255,0,0,0.5)"
+            }
+            this.tempTile.draw(this.ctx)
+        }
     }
     // meepleLeft cemo da dobijemo iz websocket poruke
     public drawMeepleUI(meepleLeft:number){
@@ -48,16 +63,25 @@ export class GraphicsManger implements Listener{
         this.ctx.fillStyle = tempFill
     }
 
+    public drawDrawnTile(){
+        if(!this.drawnTile || !this.ctx) return
+        this.drawnTile.overlayColor = "rgb(255,255,255,0.5)"
+        this.drawnTile.drawAsUI(this.ctx) 
+    }
+
     public redraw(){
         if(!this.gameState) return
         this.clear()
-        this.drawTiles()
         this.drawMeepleUI(5)
+        this.drawDrawnTile()
+        this.drawTiles()
         this.drawMeeple()
     }
 
     notify(eventType: number, msg: any) {
         if(eventType == MessageTypes.sendTile){
+            this.tempTile = null
+            this.tempTileValidPostion = false
             if(!this.gameState) return
             this.redraw()
         }
@@ -76,6 +100,17 @@ export class GraphicsManger implements Listener{
         if(eventType == MessageTypes.movedMeeple){
             this.meeples[msg["index"]].x = msg["x"]
             this.meeples[msg["index"]].y = msg["y"]
+            this.redraw()
+        }
+
+        if(eventType == MessageTypes.tempTilePlaced){
+            this.tempTile = new Tile(msg["tileX"], msg["tileY"], msg["tileSides"])
+            this.tempTileValidPostion = msg["isValid"]
+            this.redraw()
+        }
+
+        if(eventType == MessageTypes.startGame){
+            this.drawnTile = new Tile(0, 0, msg["tileSides"])
             this.redraw()
         }
     }
@@ -97,6 +132,7 @@ export class GraphicsManger implements Listener{
     }
 
     public checkIfMeepleValidPosition(meeple:Meeple):Tile|null{
+        /*
         for(let [_, tile] of this.gameState){
             let realCoords = tile.indexToCoord()
             let checkX = meeple.x >= realCoords[0] && meeple.x <= realCoords[0] + Tile.width
@@ -104,6 +140,13 @@ export class GraphicsManger implements Listener{
             if(checkX && checkY){
                 return tile
             }
+        }*/
+        if(!this.tempTile || !this.tempTileValidPostion) return null
+        let realCoords = this.tempTile.indexToCoord()
+        let checkX = meeple.x >= realCoords[0] && meeple.x <= realCoords[0] + Tile.width
+        let checkY = meeple.y >= realCoords[1] && meeple.y <= realCoords[1] + Tile.height
+        if(checkX && checkY){
+            return this.tempTile
         }
         return null
     }
