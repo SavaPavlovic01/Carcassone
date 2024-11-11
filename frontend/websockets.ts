@@ -7,7 +7,7 @@ export class WS_driver{
     subscribers:Map<number, Listener[]>
 
     constructor(){
-        this.socket = new WebSocket("ws://localhost:8080")
+        this.socket = new WebSocket("ws://localhost:8080/ws")
         this.socket.onopen = (ev:Event) =>{
             console.log("OPEN")
             this.is_open = true
