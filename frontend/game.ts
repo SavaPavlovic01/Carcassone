@@ -75,12 +75,12 @@ export class Game{
             let id = GameManager.indexToStr(index)
             this.graphicsMangaer.tempTile.overlayColor = ""
             this.gameManager.tiles.set(id, this.graphicsMangaer.tempTile)
-            console.log(this.gameManager.tiles)
+            console.log(this.graphicsMangaer.tempTile)
             const msg = {
                 msgType:MessageTypes.sendTile,
                 roomId:this.gameManager.roomId,
                 playerId:this.gameManager.playerId,
-                sides:[TileSide.road, TileSide.city, TileSide.grass, TileSide.city],
+                sides:this.graphicsMangaer.tempTile.sides,
                 x:index[0],
                 y:index[1]
             }

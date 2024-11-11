@@ -57,7 +57,7 @@ func (p *Player) receiveMsg() (map[string]interface{}, error) {
 		return nil, errors.New("on read")
 	}
 
-	fmt.Printf("%+v\n", data)
+	//fmt.Printf("%+v\n", data)
 	return data, nil
 
 }
@@ -70,7 +70,7 @@ func (p *Player) start() {
 			p.sendString("error")
 			continue
 		}
-		fmt.Printf("%+v\n", data)
+		//fmt.Printf("%+v\n", data)
 		if getEventType(data) == createRoom {
 			p.id = data["playerId"].(string)
 			if p.inRoom {

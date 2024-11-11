@@ -117,138 +117,32 @@ func (g game) place_tile(placed_tile tile, x_offset int, y_offset int) error {
 	return nil
 }
 
+func getOppositeSide(side int) int {
+	return (side + 2) % 4
+}
+
 // TODO: REFACTOR
 func (g game) check_neighbors(t tile, x_offset int, y_offset int) bool {
 	//fmt.Println(x_offset, y_offset)
 	at_least_one_neighbor := false
-	top_tile, exists := g.Board[int_tuple{x_offset, y_offset - 1}]
-	if exists {
-		at_least_one_neighbor = true
-		if !sides_match(top_tile.Sides[bottom], t.Sides[top]) {
-			return false
-		}
-	}
 
-	left_tile, exists := g.Board[int_tuple{x_offset - 1, y_offset}]
-	if exists {
-		fmt.Println("HERE")
-		at_least_one_neighbor = true
-		if !sides_match(left_tile.Sides[right], t.Sides[left]) {
-			fmt.Println("HMMMM")
-			return false
+	offset := []int_tuple{{-1, 0}, {0, 1}, {1, 0}, {0, -1}}
+	sides := []int{left, top, right, bottom}
+	location := int_tuple{x_offset, y_offset}
+	fmt.Println(t)
+	for i, side := range sides {
+		neighbor, exists := g.Board[addTuples(location, offset[i])]
+		fmt.Println(side, neighbor)
+		if !exists {
+			continue
 		}
-	}
-
-	right_tile, exists := g.Board[int_tuple{x_offset + 1, y_offset}]
-	if exists {
 		at_least_one_neighbor = true
-		if !sides_match(right_tile.Sides[left], t.Sides[right]) {
-			return false
-		}
-	}
-
-	bottom_tile, exists := g.Board[int_tuple{x_offset, y_offset + 1}]
-	if exists {
-		at_least_one_neighbor = true
-		if !sides_match(bottom_tile.Sides[top], t.Sides[bottom]) {
+		if !sides_match(t.Sides[side], neighbor.Sides[getOppositeSide(side)]) {
 			return false
 		}
 	}
 
 	return at_least_one_neighbor
-}
-
-// 0-nista
-// 1-posecen
-// 2-zatvoren
-
-// TODO REFACTOR
-func (g game) check_city_finished(x_pos int, y_pos int) (bool, int) {
-	visited_map := map[int_tuple]int{{x_pos, y_pos}: 1}
-	return g.recurse(visited_map, x_pos, y_pos)
-}
-
-func (g game) recurse(visited_map map[int_tuple]int, x_pos int, y_pos int) (bool, int) {
-	cur_tile := g.Board[int_tuple{x_pos, y_pos}]
-	is_closed := true
-	total_score := 0
-	has_city := false
-	if cur_tile.Sides[top] == city_connected || cur_tile.Sides[top] == city {
-		status := visited_map[int_tuple{x_pos, y_pos - 1}]
-		_, found := g.Board[int_tuple{x_pos, y_pos - 1}]
-		has_city = true
-		if found && status == 0 {
-			visited_map[int_tuple{x_pos, y_pos - 1}] = 1
-			closed, score := g.recurse(visited_map, x_pos, y_pos-1)
-			total_score += score
-			if !closed {
-				is_closed = false
-			}
-		}
-
-		if !found {
-			is_closed = false
-		}
-	}
-
-	if cur_tile.Sides[bottom] == city_connected || cur_tile.Sides[bottom] == city {
-		status := visited_map[int_tuple{x_pos, y_pos + 1}]
-		_, found := g.Board[int_tuple{x_pos, y_pos + 1}]
-		has_city = true
-
-		if found && status == 0 {
-			visited_map[int_tuple{x_pos, y_pos + 1}] = 1
-			closed, score := g.recurse(visited_map, x_pos, y_pos+1)
-			total_score += score
-			if !closed {
-				is_closed = false
-			}
-		}
-
-		if !found {
-			is_closed = false
-		}
-	}
-
-	if cur_tile.Sides[right] == city_connected || cur_tile.Sides[right] == city {
-		status := visited_map[int_tuple{x_pos + 1, y_pos}]
-		_, found := g.Board[int_tuple{x_pos + 1, y_pos}]
-		has_city = true
-		if found && status == 0 {
-			visited_map[int_tuple{x_pos + 1, y_pos}] = 1
-			closed, score := g.recurse(visited_map, x_pos+1, y_pos)
-			total_score += score
-			if !closed {
-				is_closed = false
-			}
-		}
-
-		if !found {
-			is_closed = false
-		}
-	}
-
-	if cur_tile.Sides[left] == city_connected || cur_tile.Sides[left] == city {
-		status := visited_map[int_tuple{x_pos - 1, y_pos}]
-		_, found := g.Board[int_tuple{x_pos - 1, y_pos}]
-		has_city = true
-		if found && status == 0 {
-			visited_map[int_tuple{x_pos + 1, y_pos}] = 1
-			closed, score := g.recurse(visited_map, x_pos+1, y_pos)
-			total_score += score
-			if !closed {
-				is_closed = false
-			}
-		}
-
-		if !found {
-			is_closed = false
-		}
-	}
-	if has_city {
-		total_score += 1
-	}
-	return is_closed, total_score
 }
 
 func (g *game) addMeeple(x int, y int, color string, isPriest bool) {

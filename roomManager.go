@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"strconv"
 )
 
@@ -61,7 +60,7 @@ func (rm RoomManager) start() {
 		select {
 		case req := <-rm.makeRoomReq:
 			if req.reqType == makeNewRoom {
-				fmt.Printf("%+v\n", req.player)
+				//fmt.Printf("%+v\n", req.player)
 				err := rm.addRoom(req.player)
 				if err != nil {
 					req.player.sendString("room already exists")
@@ -77,7 +76,7 @@ func (rm RoomManager) start() {
 				}
 				req.player.inRoom = true
 				req.player.sendString("OK")
-				fmt.Printf("%+v\n", rm.rooms)
+				//fmt.Printf("%+v\n", rm.rooms)
 				rm.rooms[req.room].pingRoom(strconv.Itoa(len(rm.rooms[req.room].players)))
 			}
 
