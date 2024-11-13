@@ -121,7 +121,6 @@ func getOppositeSide(side int) int {
 	return (side + 2) % 4
 }
 
-// TODO: REFACTOR
 func (g game) check_neighbors(t tile, x_offset int, y_offset int) bool {
 	//fmt.Println(x_offset, y_offset)
 	at_least_one_neighbor := false

@@ -41,6 +41,7 @@ export class Game{
         this.driver.attach(MessageTypes.tempTilePlaced, this.graphicsMangaer)
         this.driver.attach(MessageTypes.startGame, this.gameManager)
         this.driver.attach(MessageTypes.startGame, this.graphicsMangaer)
+        this.driver.attach(MessageTypes.joinRoom, this.graphicsMangaer)
 
         this.addCanvasListeners()
 

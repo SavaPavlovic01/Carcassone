@@ -19,6 +19,9 @@ export class GraphicsManger implements Listener{
 
     drawnTile:Tile | null = null
 
+    playerCnt:number = 0
+    gameStarted:boolean = false
+
     constructor(ctx:CanvasRenderingContext2D | null, gameState:Map<string, Tile>){
         this.ctx = ctx
         this.gameState = gameState
@@ -69,11 +72,20 @@ export class GraphicsManger implements Listener{
         this.drawnTile.drawAsUI(this.ctx) 
     }
 
+    public drawPlayerCnt(){
+        if(!this.ctx) return
+        let temp = this.ctx.fillStyle
+        this.ctx.fillStyle = "white"
+        this.ctx.fillText("Players in room:" + this.playerCnt.toString(), 0, 25, 100)
+        this.ctx.fillStyle = temp
+    }
+
     public redraw(){
         if(!this.gameState) return
         this.clear()
         this.drawMeepleUI(5)
         this.drawDrawnTile()
+        if(!this.gameStarted)this.drawPlayerCnt()
         this.drawTiles()
         this.drawMeeple()
     }
@@ -111,6 +123,12 @@ export class GraphicsManger implements Listener{
 
         if(eventType == MessageTypes.startGame){
             this.drawnTile = new Tile(0, 0, msg["tileSides"])
+            this.gameStarted = true
+            this.redraw()
+        }
+
+        if(eventType == MessageTypes.joinRoom){
+            this.playerCnt = msg.playerCnt
             this.redraw()
         }
     }

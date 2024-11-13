@@ -23,6 +23,11 @@ type RoomManager struct {
 	makeRoomReq chan RoomRequest
 }
 
+type PlayerJoinedMsg struct {
+	MsgType   EventType `json:"msgType"`
+	PlayerCnt int       `json:"playerCnt"`
+}
+
 func (rm RoomManager) addRoom(owner *Player) error {
 	if _, exists := rm.rooms[owner.id]; exists {
 		return errors.New("room already exists")
@@ -65,7 +70,8 @@ func (rm RoomManager) start() {
 				if err != nil {
 					req.player.sendString("room already exists")
 				} else {
-					req.player.sendString("1")
+					resp := PlayerJoinedMsg{MsgType: joinRoom, PlayerCnt: 1}
+					req.player.sendStruct(resp)
 					req.player.inRoom = true
 				}
 			}
@@ -78,6 +84,8 @@ func (rm RoomManager) start() {
 				req.player.sendString("OK")
 				//fmt.Printf("%+v\n", rm.rooms)
 				rm.rooms[req.room].pingRoom(strconv.Itoa(len(rm.rooms[req.room].players)))
+				resp := PlayerJoinedMsg{MsgType: joinRoom, PlayerCnt: len(rm.rooms[req.room].players)}
+				rm.rooms[req.room].pingRoomStruct(resp)
 			}
 
 		}
