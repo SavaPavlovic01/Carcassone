@@ -30,11 +30,18 @@ export class WS_driver{
         }   
     }
 
-    public attach(msgType:number, listener:Listener){
+
+    private attachOne(msgType:number, listener:Listener){
         let listeners = this.subscribers.get(msgType)
         if(!listeners){
             this.subscribers.set(msgType, [listener]);
         } else listeners?.push(listener);
+    }
+
+    public attach(msgTypes:number[], listener:Listener){
+        for(let type of msgTypes){
+            this.attachOne(type, listener)
+        }
     }
 
 }

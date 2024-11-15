@@ -32,17 +32,11 @@ export class Game{
         Tile.origin_y = Math.floor(this.canvasElem.height / (2 * Tile.height)) * Tile.height
 
         this.graphicsMangaer.redraw()
+        this.driver.attach([MessageTypes.sendTile, MessageTypes.startGame], this.gameManager)
 
-        this.driver.attach(MessageTypes.sendTile, this.gameManager)
-        this.driver.attach(MessageTypes.sendTile, this.graphicsMangaer)
-        this.driver.attach(MessageTypes.sendMeeple, this.graphicsMangaer)
-        this.driver.attach(MessageTypes.removeMeeple, this.graphicsMangaer)
-        this.driver.attach(MessageTypes.movedMeeple, this.graphicsMangaer)
-        this.driver.attach(MessageTypes.tempTilePlaced, this.graphicsMangaer)
-        this.driver.attach(MessageTypes.startGame, this.gameManager)
-        this.driver.attach(MessageTypes.startGame, this.graphicsMangaer)
-        this.driver.attach(MessageTypes.joinRoom, this.graphicsMangaer)
-
+        this.driver.attach([MessageTypes.sendTile, MessageTypes.sendMeeple, 
+            MessageTypes.removeMeeple, MessageTypes.movedMeeple, 
+            MessageTypes.tempTilePlaced, MessageTypes.startGame, MessageTypes.joinRoom], this.graphicsMangaer)
         this.addCanvasListeners()
 
     }
